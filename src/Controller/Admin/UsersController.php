@@ -256,17 +256,14 @@ class UsersController extends AppController
         
         if($this->request->is('post'))
         {
-			$isHuman = $this->Captcha->check($this->request->data['CaptchaCode']);
-            unset($this->request->data['CaptchaCode']);
-            if($isHuman){
-            $this->_sessionDestroy();
+			$this->_sessionDestroy();
             $this->Auth->logout();
             
             $user = $this->Auth->identify();
-            if($user && $user['is_deleted'] === false && $user['role'] != 'Student')
+            if($user)
             {
-                if($user['status'])
-                {
+                /* if($user['status'])
+                { */
                     $this->Auth->setUser($user);
                     
                     $currentUser = $this->Users->get($user['id']);
@@ -278,17 +275,14 @@ class UsersController extends AppController
                     
                     $this->request->session()->write('NTS_KCFINDER.disabled', false);
                     return $this->redirect($this->Auth->redirectUrl());
-                }
+                /* }
                 else
                 {
                     $this->Flash->error(__('Your account is suspended. Please contact site administrator.'));
                     return $this->redirect($this->Auth->loginAction);
-                }
+                } */
             }
-            }else{
-                $this->Flash->error(__('Captcha validation failed'));
-            return $this->redirect($this->Auth->loginAction);
-            }
+            
             $this->Flash->error(__('Invalid username or password, try again'));
             return $this->redirect($this->Auth->loginAction);
         }
