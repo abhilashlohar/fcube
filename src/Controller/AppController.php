@@ -49,7 +49,7 @@ class AppController extends Controller
         $this->loadComponent('Flash');
         $this->loadComponent('Auth', [
             'authenticate' => [
-                'Form' => ['userModel' => $this->_userModel, 'fields' => ['username' => 'email'],'scope' => ['is_deleted' => false,'status' => true]]],
+                'Form' => ['userModel' => $this->_userModel, 'fields' => ['username' => 'username'],'scope' => ['is_deleted' => false]]],
             'loginAction' => ['controller' => 'Users', 'action' => 'login'],
             'loginRedirect' => ['controller' => 'Dashboards', 'action' => 'index'],
             'unauthorizedRedirect' => $this->referer()

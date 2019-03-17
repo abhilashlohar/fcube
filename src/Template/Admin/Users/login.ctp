@@ -10,14 +10,14 @@
 			<label class="control-label visible-ie8 visible-ie9">Username</label>
 			<div class="input-icon">
 				<i class="fa fa-user"></i>
-				<input class="form-control placeholder-no-fix" type="text" autocomplete="off" placeholder="Username" name="username"/>
+				<?= $this->Form->control('username', ['label' => false, 'class' => 'form-control placeholder-no-fix', 'placeholder' => __(' Username'),'autocomplete'=>'off']) ?>
 			</div>
 		</div>
 		<div class="form-group">
 			<label class="control-label visible-ie8 visible-ie9">Password</label>
 			<div class="input-icon">
 				<i class="fa fa-lock"></i>
-				<input class="form-control placeholder-no-fix" type="password" autocomplete="off" placeholder="Password" name="password"/>
+				<?= $this->Form->control('password', ['label' => false, 'class' => 'form-control placeholder-no-fix', 'placeholder' => __('Password'), 'type' => 'password','autocomplete'=>'off']) ?>
 			</div>
 		</div>
 		<div class="form-actions">
