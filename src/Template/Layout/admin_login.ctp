@@ -26,22 +26,13 @@ License: You must have a valid license purchased only from themeforest(the above
 <meta content="" name="author"/>
 <!-- BEGIN GLOBAL MANDATORY STYLES -->
 <link href="http://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700&subset=all" rel="stylesheet" type="text/css"/>
-<link href="../../assets/global/plugins/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css"/>
-<link href="../../assets/global/plugins/simple-line-icons/simple-line-icons.min.css" rel="stylesheet" type="text/css"/>
-<link href="../../assets/global/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
-<link href="../../assets/global/plugins/uniform/css/uniform.default.css" rel="stylesheet" type="text/css"/>
-<!-- END GLOBAL MANDATORY STYLES -->
-<!-- BEGIN PAGE LEVEL STYLES -->
-<link href="../../assets/global/plugins/select2/select2.css" rel="stylesheet" type="text/css"/>
-<link href="../../assets/admin/pages/css/login-soft.css" rel="stylesheet" type="text/css"/>
-<!-- END PAGE LEVEL SCRIPTS -->
-<!-- BEGIN THEME STYLES -->
-<link href="../../assets/global/css/components.css" id="style_components" rel="stylesheet" type="text/css"/>
-<link href="../../assets/global/css/plugins.css" rel="stylesheet" type="text/css"/>
-<link href="../../assets/admin/layout/css/layout.css" rel="stylesheet" type="text/css"/>
-<link id="style_color" href="../../assets/admin/layout/css/themes/darkblue.css" rel="stylesheet" type="text/css"/>
-<link href="../../assets/admin/layout/css/custom.css" rel="stylesheet" type="text/css"/>
-<!-- END THEME STYLES -->
+<?= $this->Html->css(['../assets/global/plugins/font-awesome/css/font-awesome.min', '../assets/global/plugins/simple-line-icons/simple-line-icons.min', '../assets/global/plugins/bootstrap/css/bootstrap.min', 
+'../assets/global/plugins/uniform/css/uniform.default',
+'../assets/global/css/plugins',
+'../assets/global/plugins/select2/select2',
+'../assets/admin/pages/css/login-soft','../assets/global/css/components',
+'../assets/admin/layout/css/layout','../assets/admin/layout/css/themes/darkblue','../assets/admin/layout/css/custom']) ?>
+
 <link rel="shortcut icon" href="favicon.ico"/>
 </head>
 <!-- END HEAD -->
