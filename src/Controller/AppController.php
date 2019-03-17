@@ -16,6 +16,8 @@ namespace App\Controller;
 
 use Cake\Controller\Controller;
 use Cake\Event\Event;
+use Cake\Mailer\Email;
+use Muffin\Footprint\Auth\FootprintAwareTrait;
 
 /**
  * Application Controller
@@ -45,11 +47,45 @@ class AppController extends Controller
             'enableBeforeRedirect' => false,
         ]);
         $this->loadComponent('Flash');
-
+        $this->loadComponent('Auth', [
+            'authenticate' => [
+                'Form' => ['userModel' => $this->_userModel, 'fields' => ['username' => 'email'],'scope' => ['is_deleted' => false,'status' => true]]],
+            'loginAction' => ['controller' => 'Users', 'action' => 'login'],
+            'loginRedirect' => ['controller' => 'Dashboards', 'action' => 'index'],
+            'unauthorizedRedirect' => $this->referer()
+        ]);
+        
+        if($this->request->getParam('prefix') == 'admin')
+        {
+            if(!$this->request->is('ajax'))
+            {
+                $this->viewBuilder()->layout('admin');
+            }
+            
+            $this->Auth->config([
+                'storage' => ['className' => 'Session', 'key' => 'Auth.Admin'
+            ]]);
+        }
+		$this->userAuth = $this->Auth->user();
+        $this->userId = $this->Auth->user('id');
         /*
          * Enable the following component for recommended CakePHP security settings.
          * see https://book.cakephp.org/3.0/en/controllers/components/security.html
          */
         //$this->loadComponent('Security');
+    }
+	
+	public function beforeRender(Event $event)
+    {
+        parent::beforeRender($event);
+        
+        $userAuth = $this->userAuth;
+        $coreVariable = $this->coreVariable;
+        
+        
+        
+        
+        $this->set(compact('coreVariable', 'userAuth'));
+       
     }
 }

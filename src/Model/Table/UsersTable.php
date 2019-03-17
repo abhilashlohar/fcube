@@ -1,175 +1,209 @@
 <?php
 namespace App\Model\Table;
 
+use Cake\Auth\DefaultPasswordHasher;
+use Cake\Datasource\Exception\RecordNotFoundException;
+use Cake\Event\Event;
 use Cake\ORM\Query;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
+use ArrayObject;
 
-/**
- * Users Model
- *
- * @method \App\Model\Entity\User get($primaryKey, $options = [])
- * @method \App\Model\Entity\User newEntity($data = null, array $options = [])
- * @method \App\Model\Entity\User[] newEntities(array $data, array $options = [])
- * @method \App\Model\Entity\User|bool save(\Cake\Datasource\EntityInterface $entity, $options = [])
- * @method \App\Model\Entity\User|bool saveOrFail(\Cake\Datasource\EntityInterface $entity, $options = [])
- * @method \App\Model\Entity\User patchEntity(\Cake\Datasource\EntityInterface $entity, array $data, array $options = [])
- * @method \App\Model\Entity\User[] patchEntities($entities, array $data, array $options = [])
- * @method \App\Model\Entity\User findOrCreate($search, callable $callback = null, $options = [])
- */
 class UsersTable extends Table
 {
-
-    /**
-     * Initialize method
-     *
-     * @param array $config The configuration for the Table.
-     * @return void
-     */
     public function initialize(array $config)
     {
         parent::initialize($config);
-
-        $this->setTable('users');
-        $this->setDisplayField('id');
-        $this->setPrimaryKey('id');
+        
+      //  $this->addBehavior('Muffin/Footprint.Footprint');
+        $this->addBehavior('Timestamp', [
+            'events' => [
+                'Model.beforeSave' => [
+                    'created' => 'new',
+                    'modified' => 'always'
+                ],
+                'Users.login' => [
+                    'last_login' => 'always'
+                ]
+            ]
+        ]);
+        
+	$this->hasOne('AdmissionApplicants', [
+            'className' => 'AdmissionApplicants',
+            'foreignKey' => 'user_id',
+            'dependent' => true
+        ]);
+		
+        $this->belongsToMany('Modules', [
+            'className' => 'Modules',
+            'joinTable' => 'users_modules',
+            'foreignKey' => 'user_id',
+            'targetForeignKey' => 'module_id',
+            'dependent' => true,
+            'through' => 'UsersModules'
+        ]);
+        
+        $this->belongsToMany('Institutes', [
+            'className' => 'Institutes',
+            'joinTable' => 'users_institutes',
+            'foreignKey' => 'user_id',
+            'targetForeignKey' => 'institute_id',
+            'dependent' => true,
+            'through' => 'UsersInstitutes'
+        ]);
+        
+        $this->belongsTo('Creator', [
+            'className' => 'Users',
+            'foreignKey' => 'created_by'
+        ]);
+        $this->belongsTo('Modifier', [
+            'className' => 'Users',
+            'foreignKey' => 'modified_by'
+        ]);
     }
-
-    /**
-     * Default validation rules.
-     *
-     * @param \Cake\Validation\Validator $validator Validator instance.
-     * @return \Cake\Validation\Validator
-     */
+    
     public function validationDefault(Validator $validator)
     {
         $validator
-            ->integer('id')
-            ->allowEmptyString('id', 'create');
-
+            ->scalar('name', __('Please enter a valid name.'))
+            ->maxLength('name', 180, __('Name must be less than {0} characters.', 180))
+            ->requirePresence('name', 'create')
+            ->notEmpty('name', __('Please enter a name.'))
+            ->notBlank('name', __('Please enter a valid name.'));
+        
         $validator
-            ->scalar('first_name')
-            ->maxLength('first_name', 50)
-            ->requirePresence('first_name', 'create')
-            ->allowEmptyString('first_name', false);
-
-        $validator
-            ->scalar('middle_name')
-            ->maxLength('middle_name', 50)
-            ->requirePresence('middle_name', 'create')
-            ->allowEmptyString('middle_name', false);
-
-        $validator
-            ->scalar('last_name')
-            ->maxLength('last_name', 50)
-            ->requirePresence('last_name', 'create')
-            ->allowEmptyString('last_name', false);
-
-        $validator
-            ->date('dob')
-            ->requirePresence('dob', 'create')
-            ->allowEmptyDate('dob', false);
-
-        $validator
-            ->scalar('profile_pic')
-            ->maxLength('profile_pic', 255)
-            ->requirePresence('profile_pic', 'create')
-            ->allowEmptyFile('profile_pic', false);
-
-        $validator
-            ->scalar('blood_group')
-            ->maxLength('blood_group', 5)
-            ->requirePresence('blood_group', 'create')
-            ->allowEmptyString('blood_group', false);
-
-        $validator
-            ->scalar('gender')
-            ->maxLength('gender', 5)
-            ->requirePresence('gender', 'create')
-            ->allowEmptyString('gender', false);
-
-        $validator
-            ->scalar('contact_number')
-            ->maxLength('contact_number', 10)
-            ->requirePresence('contact_number', 'create')
-            ->allowEmptyString('contact_number', false);
-
-        $validator
-            ->email('email')
+            ->email('email', __('Please enter a valid email address.'))
+            ->maxLength('email', 240, __('Email address must be less than {0} characters.', 240))
             ->requirePresence('email', 'create')
-            ->allowEmptyString('email', false);
-
+            ->notEmpty('email', __('Please enter a email address.'))
+            ->add('email', 'unique', [
+                'rule' => ['validateUnique', ['scope' => 'is_deleted']], 
+                'provider' => 'table',
+                'message' => __('Email address has already been taken. Please use a different one.')
+            ]);
+        
         $validator
-            ->scalar('address')
-            ->requirePresence('address', 'create')
-            ->allowEmptyString('address', false);
-
+            ->requirePresence('role', 'create')
+            ->notEmpty('role', __('Please select a user role.'))
+            ->notBlank('role', __('Please select a user role.'))
+            ->inList('role', ['Admin', 'Editor', 'Student'], __('Please select a valid user role.'));
+        
         $validator
-            ->scalar('parent_full_name')
-            ->maxLength('parent_full_name', 150)
-            ->requirePresence('parent_full_name', 'create')
-            ->allowEmptyString('parent_full_name', false);
-
+            ->scalar('mobile', __('Please enter a valid mobile number.'))
+            ->regex('mobile', '/^(\+[0-9]{1,4}[- ]{0,1})?\(?([0-9]{3})\)?[- ]{0,1}([0-9]{3})[- ]{0,1}([0-9]{4})$/i', __('Please enter a valid mobile number.'))
+            ->maxLength('mobile', 21, __('Mobile number must be less than {0} characters.', 21))
+			->notEmpty('mobile', __('Please enter a mobile number.'));
+           // ->allowEmpty('mobile');
+        
         $validator
-            ->scalar('parent_contact_number')
-            ->maxLength('parent_contact_number', 10)
-            ->requirePresence('parent_contact_number', 'create')
-            ->allowEmptyString('parent_contact_number', false);
-
-        $validator
-            ->scalar('remark')
-            ->requirePresence('remark', 'create')
-            ->allowEmptyString('remark', false);
-
-        $validator
-            ->integer('epicenter')
-            ->requirePresence('epicenter', 'create')
-            ->allowEmptyString('epicenter', false);
-
-        $validator
-            ->integer('center')
-            ->requirePresence('center', 'create')
-            ->allowEmptyString('center', false);
-
-        $validator
-            ->scalar('facebook')
-            ->maxLength('facebook', 255)
-            ->requirePresence('facebook', 'create')
-            ->allowEmptyString('facebook', false);
-
-        $validator
-            ->scalar('instagram')
-            ->maxLength('instagram', 255)
-            ->requirePresence('instagram', 'create')
-            ->allowEmptyString('instagram', false);
-
-        $validator
-            ->scalar('password')
-            ->maxLength('password', 255)
+            ->scalar('password', __('Please enter a valid password.'))
+            ->lengthBetween('password', [6, 32], __('Passwords must be between 6 and 32 characters long.'))
             ->requirePresence('password', 'create')
-            ->allowEmptyString('password', false);
-
+            ->notEmpty('password', __('Please enter a password.'))
+            ->notBlank('password', __('Please enter a valid password.'))
+			->add('password', 'custom', [
+                'rule' => [$this, 'checkCharacters'],
+                'message' => 'The password must contain 1 number, 1 uppercase, 1 lowercase, and 1 special character'
+            ]);
+        
         $validator
-            ->scalar('registration_location')
-            ->maxLength('registration_location', 255)
-            ->requirePresence('registration_location', 'create')
-            ->allowEmptyString('registration_location', false);
-
+            ->scalar('confirm_password', __('Please enter a valid confirm password.'))
+            ->sameAs('confirm_password', 'password', __('Password and confirm password must be same.'))
+            ->notEmpty('confirm_password', __('Please enter the confirm password.'));
+        
+        $validator
+            ->scalar('current_password', __('Please enter the valid current password.'))
+            ->notEmpty('current_password', 'Please enter the current password.')
+            ->add('current_password', 'matchCurrent', [
+                'rule' => function($entity, $options) {
+                    try
+                    {
+                        $user = $this->get($options['data']['id'], [
+                            'fields' => ['password']
+                        ]);
+                        
+                        if($user)
+                        {
+                            if((new DefaultPasswordHasher)->check($entity, $user->password))
+                            {
+                                return true;
+                            }
+                        }
+                        
+                        return false;
+                    }
+                    catch(RecordNotFoundException $e)
+                    {
+                        return false;
+                    }
+                },
+                'message' => 'The password you supplied is not correct.'
+            ]);
+        
+        $validator
+            ->boolean('status', __('Please select a valid status.'))
+            ->requirePresence('status', 'create')
+            ->notEmpty('status', __('Please select a status'));
+        
         return $validator;
     }
-
-    /**
-     * Returns a rules checker object that will be used for validating
-     * application integrity.
-     *
-     * @param \Cake\ORM\RulesChecker $rules The rules object to be modified.
-     * @return \Cake\ORM\RulesChecker
-     */
+    public function checkCharacters($password, array $context)
+    {
+        // number
+        if (!preg_match("#[0-9]#", $password)) {
+            return false;
+        }
+        // Uppercase
+        if (!preg_match("#[A-Z]#", $password)) {
+            return false;
+        }
+        // lowercase
+        if (!preg_match("#[a-z]#", $password)) {
+            return false;
+        }
+        // special characters
+        if (!preg_match("#\W+#", $password) ) {
+            return false;
+        }
+        return true;
+    }
+    public function validationForgotPassword(Validator $validator)
+    {
+        $validator
+            ->email('email', __('Please enter a valid email address.'))
+            ->maxLength('email', 240, __('Email address must be less than {0} characters.', 240))
+            ->requirePresence('email')
+            ->notEmpty('email', __('Please enter a email address.'));
+        
+        return $validator;
+    }
+    
+    public function validationResetPassword(Validator $validator)
+    {
+        $validator = $this->validationDefault($validator)
+            ->remove('name')
+            ->remove('email', 'unique')
+            ->remove('role');
+        
+        return $validator;
+    }
+    
     public function buildRules(RulesChecker $rules)
     {
-        $rules->add($rules->isUnique(['email']));
-
+        $rules->add($rules->isUnique(['email', 'is_deleted']));
+        $rules->add($rules->existsIn(['created_by'], 'Creator'));
+        $rules->add($rules->existsIn(['modified_by'], 'Modifier'));
+        
         return $rules;
+    }
+    
+    public function beforeMarshal(Event $event, ArrayObject $data, ArrayObject $options)
+    {
+        if((isset($data['password']) && $data['password'] == '') && (isset($data['confirm_password']) && $data['confirm_password'] == ''))
+        {
+            unset($data['password']);
+            unset($data['confirm_password']);
+        }
     }
 }
