@@ -72,10 +72,12 @@ class AppController extends Controller
         {
             if(!$this->request->is('ajax'))
             {
-                $this->viewBuilder()->layout('admin');
+                //$this->viewBuilder()->layout('admin');
+                $this->viewBuilder()->setLayout('admin');
+                //$this->ViewBuilder::setLayout('admin')
             }
             
-            $this->Auth->config([
+            $this->Auth->setConfig([
                 'storage' => ['className' => 'Session', 'key' => 'Auth.Admin'
             ]]);
         }

@@ -401,7 +401,8 @@ class UsersController extends AppController
     public function login()
     {
         $this->set('page_title', 'Administration Login');
-        $this->viewBuilder()->layout('admin_login');
+        $this->viewBuilder()->setLayout('admin_login');
+        //ViewBuilder::setLayout('admin_login');
         
         if($this->request->is('post'))
         {
