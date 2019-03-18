@@ -81,6 +81,13 @@ class AppController extends Controller
                 'storage' => ['className' => 'Session', 'key' => 'Auth.Admin'
             ]]);
         }
+		else
+        {
+             $this->Auth->config([
+                'loginAction' => ['controller' => 'Users', 'action' => 'register'],
+                'loginRedirect' => ['controller' => 'Users', 'action' => 'view'],
+            ]);
+		}
 		$this->userAuth = $this->Auth->user();
         $this->userId = $this->Auth->user('id');
         /*
