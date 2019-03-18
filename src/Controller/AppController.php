@@ -94,8 +94,8 @@ class AppController extends Controller
     {
         parent::beforeRender($event);
         
-        $userAuth = $this->userAuth;
-        $coreVariable = $this->coreVariable;
+        //$userAuth = $this->userAuth;
+        //$coreVariable = $this->coreVariable;
         
         
         

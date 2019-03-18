@@ -426,7 +426,7 @@ class UsersController extends AppController
                         $this->Users->save($currentUser);
                     }
                     
-                    $this->request->session()->write('NTS_KCFINDER.disabled', false);
+                    $this->request->getSession()->write('NTS_KCFINDER.disabled', false);
                     return $this->redirect($this->Auth->redirectUrl());
                 }
                 else
