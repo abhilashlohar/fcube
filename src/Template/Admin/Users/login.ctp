@@ -29,11 +29,6 @@
 		</div>
 		
 		<div class="forget-password">
-			<h4>Forgot your password ?</h4>
-			<p>
-				 no worries, click <a href="javascript:;" id="forget-password">
-				here </a>
-				to reset your password.
-			</p>
+			 <?= $this->Html->link(__('Forgot Password?'), ['controller' => 'Users', 'action' => 'forgotPassword'], ['class' => 'forget-password']); ?>
 		</div>
 	<?= $this->Form->end() ?>

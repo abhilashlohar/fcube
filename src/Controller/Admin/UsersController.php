@@ -1,9 +1,5 @@
 <?php
-/**
- * @author: Sonia Solanki
- * @date: March 01, 2018
- * @version: 1.0.0
- */
+
 namespace App\Controller\Admin;
 
 use App\Controller\AppController;
@@ -12,6 +8,7 @@ use Cake\I18n\Time;
 use Cake\Mailer\Email;
 use Cake\Network\Exception\MethodNotAllowedException;
 use Cake\Network\Exception\NotFoundException;
+use Cake\Auth\DefaultPasswordHasher;
 
 class UsersController extends AppController
 {
@@ -21,8 +18,8 @@ class UsersController extends AppController
     {
         parent::initialize();
         //$this->loadComponent('CakephpCaptcha.Captcha');
-        $passed = ['forgotPassword', 'resetPassword', 'login', 'logout', 'changeProfile', 'changePassword'];
-        if(!in_array($this->request->getParam('action'), $passed) && !$this->userAuthorized())
+        $passed = ['forgotPassword', 'resetPassword', 'login', 'logout', 'changeProfile', 'changePassword', 'registration'];
+        if(!in_array($this->request->getParam('action'), $passed) )
         {
             $this->Flash->error(__('You are not authorized to access that location.'));
             return $this->redirect(['controller' => 'Dashboards', 'action' => 'index']);
@@ -101,39 +98,32 @@ class UsersController extends AppController
         }
     }
     
-    public function add()
+    public function registration()
     {
+		
         $this->set('page_title', __('Add New User'));
-        
         $user = $this->Users->newEntity();
         if($this->request->is('post'))
-        {
-            $user2 = $this->request->withData('is_deleted', 0);
+        {   
+            //$user2 = $this->request->withData('is_deleted', 0);
             $user = $this->Users->patchEntity($user, $user2->getData());
+			$hasher = new DefaultPasswordHasher();
+			$user->password = 	$hasher->hash($user->password);
+			$user->confirm_password = 	$hasher->hash($user->confirm_password);
+			$user->is_deleted = 	0;
             if($this->Users->save($user))
             {
                 $this->Flash->success(__('The user has been added successfully.'));
-                return $this->redirect(['action' => 'index']);
+                return $this->redirect(['action' => 'registration']);
             }
             
             $this->Flash->error(__('The user could not be added. Please see warning(s) below.'));
         }
         
-        $modules = $this->Users->Modules->find('list')
-            ->where(['Modules.status' => true]);
-        $institutes = $this->Users->Institutes->find('list')
-            ->where(['Institutes.status' => true,'Institutes.is_deleted' => false]);
-        if($this->Auth->user('role') != 'Admin')
-        {
-            $modules->matching('Users', function($q){
-                return $q->where(['Users.id' => $this->Auth->user('id')]);
-            });
-             $institutes->matching('Users', function($q){
-                return $q->where(['Users.id' => $this->Auth->user('id')]);
-            });
-        }
         
-        $this->set(compact('user', 'modules','institutes'));
+        
+        
+        $this->set(compact('user'));
         $this->set('activeMenu', 'Admin.Users.index');
     }
     
@@ -402,18 +392,15 @@ class UsersController extends AppController
     {
         $this->set('page_title', 'Administration Login');
         $this->viewBuilder()->setLayout('admin_login');
-        //ViewBuilder::setLayout('admin_login');
         
         if($this->request->is('post'))
         {
-			/* $isHuman = $this->Captcha->check($this->request->data['CaptchaCode']);
-            unset($this->request->data['CaptchaCode']);
-            if($isHuman){ */
-            //$this->_sessionDestroy();
-            //$this->Auth->logout();
+			
+            $this->_sessionDestroy();
+            $this->Auth->logout();
             
-            $user = $this->Auth->identify(); 
-            if($user)
+            $user = $this->Auth->identify();
+            if($user && $user['is_deleted'] === false && $user['role'] != 'Student')
             {
                 if($user['status'])
                 {
@@ -426,19 +413,16 @@ class UsersController extends AppController
                         $this->Users->save($currentUser);
                     }
                     
-                    $this->request->getSession()->write('NTS_KCFINDER.disabled', false);
+                    //$this->request->session()->write('NTS_KCFINDER.disabled', false);
                     return $this->redirect($this->Auth->redirectUrl());
                 }
                 else
-                {  
+                {
                     $this->Flash->error(__('Your account is suspended. Please contact site administrator.'));
                     return $this->redirect($this->Auth->loginAction);
                 }
             }
-            /* }else{
-                $this->Flash->error(__('Captcha validation failed'));
-            return $this->redirect($this->Auth->loginAction);
-            } */
+           
             $this->Flash->error(__('Invalid username or password, try again'));
             return $this->redirect($this->Auth->loginAction);
         }
@@ -454,16 +438,16 @@ class UsersController extends AppController
     }
     
     public function forgotPassword()
-    {
+    {   
         $this->set('page_title', 'Forgot password');
-        $this->viewBuilder()->layout('admin_login');
+        $this->viewBuilder()->setLayout('admin_login');
         
         $user = $this->Users->newEntity();
         if($this->request->is(['patch', 'post', 'put']))
         {
             $user = $this->Users->patchEntity($user, $this->request->getData(), [
                 'validate' => 'forgotPassword'
-            ]);
+            ]); 
             if(!$user->errors())
             {
                 $userInfo = $this->Users->find()
@@ -481,7 +465,7 @@ class UsersController extends AppController
                         
                         $user2 = $this->request
                             ->withData('password_token', $this->_getRandomString(6).'-'.$this->_getRandomString(6).'-'.
-                                crypt($userInfo->id, 'IFWCMS').'-'.$this->_getRandomString(6).'-'.$this->_getRandomString(6))
+                                crypt($userInfo->id, 'Jupiter').'-'.$this->_getRandomString(6).'-'.$this->_getRandomString(6))
                             ->withData('token_expiry', $time->format('Y-m-d H:i:s'))
                             ->withData('is_deleted', $userInfo->is_deleted);
                         
@@ -493,8 +477,8 @@ class UsersController extends AppController
                         {
                             $email = new Email('default');
                             $email->emailFormat('html')
-                                ->setFrom($this->coreVariable['emailSenderEmail'], $this->coreVariable['emailSenderName'])
-                                ->replyTo($this->coreVariable['emailSenderEmail'], $this->coreVariable['emailSenderName'])
+                                ->setFrom('manoj@ifwworld.com', 'jupiter')
+                                ->replyTo('manoj@ifwworld.com', 'jupiter')
                                 ->setTo($userInfo->email, $userInfo->name)
                                 ->setSubject('Reset your Password for '.$this->coreVariable['siteName'])
                                 ->template('forgot_password')
@@ -536,7 +520,7 @@ class UsersController extends AppController
     public function resetPassword($passwordToken = null)
     {
         $this->set('page_title', 'Reset password');
-        $this->viewBuilder()->layout('admin_login');
+        $this->viewBuilder()->setLayout('admin_login');
         
         $userInfo = $this->Users->find()
             ->select(['id', 'name', 'email', 'status', 'token_expiry', 'is_deleted'])
@@ -553,10 +537,12 @@ class UsersController extends AppController
                 $timeCurrent = new Time();
                 $timeExpiry = new Time($userInfo->token_expiry);
                 if($timeExpiry->format('Y-m-d H:i:s') >= $timeCurrent->format('Y-m-d H:i:s'))
-                {
+                { 
+					
                     $user = $this->Users->newEntity();
                     if($this->request->is(['patch', 'post', 'put']))
                     {
+						
                         $user2 = $this->request
                             ->withData('password_token', '')
                             ->withData('token_expiry', NULL)
@@ -566,19 +552,20 @@ class UsersController extends AppController
                             'validate' => 'resetPassword',
                             'accessibleFields' => ['password_token' => true, 'token_expiry' => true]
                         ]);
-                        
+                        $hasher = new DefaultPasswordHasher();
+						$user->password = 	$hasher->hash($user->password);
                         if($this->Users->save($user))
                         {
                             $email = new Email('default');
                             $email->emailFormat('html')
-                                ->setFrom($this->coreVariable['emailSenderEmail'], $this->coreVariable['emailSenderName'])
-                                ->replyTo($this->coreVariable['emailSenderEmail'], $this->coreVariable['emailSenderName'])
+                                ->setFrom('manoj@ifwworld.com', 'jupiter')
+                                ->replyTo('manoj@ifwworld.com', 'jupiter')
                                 ->setTo($userInfo->email, $userInfo->name)
-                                ->setSubject($this->coreVariable['siteName'].' account password has been changed successfully')
+                                ->setSubject('jupiter account password has been changed successfully')
                                 ->template('reset_password')
                                 ->viewVars([
                                     'userInfo' => $userInfo,
-                                    'sitename' => $this->coreVariable['siteName']
+                                    'sitename' => 'Jupiter'
                                 ])
                                 ->send();
                             
@@ -614,13 +601,9 @@ class UsersController extends AppController
     
     protected function _sessionDestroy()
     {
-        $this->request->session()->delete('NTS_KCFINDER.disabled');
-        $this->request->session()->delete(static::SEARCH_PREFIX);
+        //$this->request->session()->delete('NTS_KCFINDER.disabled');
+        //$this->request->session()->delete(static::SEARCH_PREFIX);
     }
 	
-	 public function image() {
-        $this->autoRender = false;
-        echo $this->Captcha->image(5); 
-        exit;
-    }
+	
 }

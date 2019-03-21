@@ -70,16 +70,33 @@ class AppController extends Controller
         ]);
         if($this->request->getParam('prefix') == 'admin')
         {
+			
             if(!$this->request->is('ajax'))
             {
                 //$this->viewBuilder()->layout('admin');
-                $this->viewBuilder()->setLayout('admin');
+                $this->viewBuilder()->setLayout('default'); 
                 //$this->ViewBuilder::setLayout('admin')
             }
             
             $this->Auth->setConfig([
                 'storage' => ['className' => 'Session', 'key' => 'Auth.Admin'
             ]]);
+			
+			/*  Email::configTransport('gmail',[
+                'className' => 'Smtp',
+                'host' => 'smtp.gmail.com',
+                'port' => 587,
+                'tls' => true,
+                'username' => 'manoj@ifwworld.com',
+                'password' => 'admin@@1',
+				'context' => [
+					'ssl' => [
+						'verify_peer' => false,
+						'verify_peer_name' => false,
+						'allow_self_signed' => true
+					]
+				]
+            ]); */
         }
 		else
         {
@@ -109,5 +126,22 @@ class AppController extends Controller
         
         $this->set(compact('coreVariable', 'userAuth'));
        
+    }
+	protected function _getRandomString($length = 10, $validCharacters = null)
+    {
+        if($validCharacters == '')
+        {
+            $validCharacters = '123456789ABCDEFGHIJKLMNPQRSTUVWXYZ';
+        }
+        
+        $validCharactersCount = strlen($validCharacters);
+        
+        $string = '';
+        for($i=0; $i<$length; $i++)
+        {
+            $string .= $validCharacters[mt_rand(0, $validCharactersCount-1)];
+        }
+        
+        return $string;
     }
 }

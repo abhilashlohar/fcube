@@ -73,7 +73,7 @@ class UsersTable extends Table
             ->notBlank('name', __('Please enter a valid name.'));
         
         $validator
-            ->email('email', __('Please enter a valid email address.'))
+            //->email('email', __('Please enter a valid email address.'))
             ->maxLength('email', 240, __('Email address must be less than {0} characters.', 240))
             ->requirePresence('email', 'create')
             ->notEmpty('email', __('Please enter a email address.'))
@@ -102,10 +102,10 @@ class UsersTable extends Table
             ->requirePresence('password', 'create')
             ->notEmpty('password', __('Please enter a password.'))
             ->notBlank('password', __('Please enter a valid password.'))
-			->add('password', 'custom', [
+			/* ->add('password', 'custom', [
                 'rule' => [$this, 'checkCharacters'],
                 'message' => 'The password must contain 1 number, 1 uppercase, 1 lowercase, and 1 special character'
-            ]);
+            ]) */;
         
         $validator
             ->scalar('confirm_password', __('Please enter a valid confirm password.'))
@@ -171,7 +171,7 @@ class UsersTable extends Table
     public function validationForgotPassword(Validator $validator)
     {
         $validator
-            ->email('email', __('Please enter a valid email address.'))
+            //->email('email', __('Please enter a valid email address.'))
             ->maxLength('email', 240, __('Email address must be less than {0} characters.', 240))
             ->requirePresence('email')
             ->notEmpty('email', __('Please enter a email address.'));

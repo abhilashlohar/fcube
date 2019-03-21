@@ -83,7 +83,7 @@ Contact: abhilashlohar01@gmail.com
                             <i class="icon-user"></i> Settings </a>
                         </li>
                         <li>
-                            <a href="login.html">
+                            <a href="<?= $this->url->build(['controller' => 'Users', 'action' => 'logout'])?>">
                             <i class="icon-key"></i> Log Out </a>
                         </li>
                     </ul>
